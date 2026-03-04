@@ -53,13 +53,17 @@ export default function Gallery() {
     loadImages();
   }, []);
 
-  const filteredImages = selectedCategory === 'all'
-    ? images
-    : images.filter(img => img.category === selectedCategory);
+  const filteredImages =
+    selectedCategory === 'all'
+      ? images
+      : images.filter((img) => img.category === selectedCategory);
 
-  const featuredImages = images.slice(0, 5).map(img => ({
+  const featuredSource = images.filter((img) => img.is_featured);
+  const baseForFeatured = (featuredSource.length > 0 ? featuredSource : images).slice(0, 5);
+
+  const featuredImages = baseForFeatured.map((img) => ({
     url: img.url,
-    alt: img.alt
+    alt: img.alt,
   }));
 
   const breakpointColumns = {

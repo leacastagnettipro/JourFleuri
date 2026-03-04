@@ -1,18 +1,39 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Mail, Instagram } from 'lucide-react';
 import { submitContactForm } from '../lib/supabase';
 import ScrollReveal from '../components/ScrollReveal';
+import { getPageContentForPage, type PageContent } from '../lib/supabase';
 
 export default function Contact() {
+  const [texts, setTexts] = useState<Record<string, PageContent>>({});
   const [formData, setFormData] = useState({
     nom: '',
     email: '',
     typeEvenement: '',
     date: '',
+    lieu: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    async function load() {
+      const data = await getPageContentForPage('contact');
+      const map: Record<string, PageContent> = {};
+      data.forEach((item) => {
+        map[item.section_key] = item;
+      });
+      setTexts(map);
+    }
+    void load();
+  }, []);
+
+  const intro =
+    texts['contact_intro']?.body ?? 'Donnons vie à vos rêves floraux ensemble';
+  const formIntro =
+    texts['contact_form_intro']?.body ??
+    "Vous avez un projet floral ? Racontez-moi votre univers, je serai ravie d'imaginer une création sur mesure pour votre événement.";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,6 +46,7 @@ export default function Contact() {
         email: formData.email,
         type_evenement: formData.typeEvenement,
         date: formData.date,
+        lieu: formData.lieu,
         message: formData.message
       });
 
@@ -35,6 +57,7 @@ export default function Contact() {
           email: '',
           typeEvenement: '',
           date: '',
+          lieu: '',
           message: ''
         });
       } else {
@@ -57,15 +80,14 @@ export default function Contact() {
               <span className="font-serif text-jour-fleuri-coral text-7xl md:text-8xl">Contactez</span>-nous
             </h1>
             <p className="text-xl text-center text-gray-700 mb-16">
-              Donnons vie à vos rêves floraux ensemble
+              {intro}
             </p>
           </ScrollReveal>
 
           <ScrollReveal variant="slide-up" delay={0.2}>
             <div className="bg-jour-fleuri-cream rounded-[3rem] p-10 md:p-14 shadow-2xl mb-12 relative overflow-hidden">
               <p className="text-2xl text-gray-800 leading-relaxed text-center mb-12 relative z-10 font-light">
-                Vous avez un projet floral ? <span className="text-jour-fleuri-coral font-serif font-semibold text-3xl">Racontez-moi votre univers</span>, je serai ravie d'imaginer une
-                création sur mesure pour votre événement.
+                {formIntro}
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -132,6 +154,20 @@ export default function Contact() {
                 </div>
 
                 <div>
+                  <label htmlFor="lieu" className="block text-gray-800 font-semibold mb-3 text-lg">
+                    Lieu (ville / lieu de l'événement)
+                  </label>
+                  <input
+                    type="text"
+                    id="lieu"
+                    value={formData.lieu}
+                    onChange={(e) => setFormData({ ...formData, lieu: e.target.value })}
+                    className="w-full px-6 py-4 rounded-2xl border-2 border-gray-200 focus:border-jour-fleuri-coral focus:outline-none focus:ring-2 focus:ring-jour-fleuri-coral focus:ring-opacity-20 transition-all duration-300"
+                    placeholder="Paris, Suresnes, Château de..."
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="message" className="block text-gray-800 font-semibold mb-3 text-lg">
                     Message
                   </label>
@@ -175,16 +211,25 @@ export default function Contact() {
               </h2>
               <div className="flex flex-col md:flex-row justify-center items-center gap-8">
                 <a
-                  href="mailto:contact@jourfleuri.fr"
+                  href="mailto:louisecarton@jourfleuri.com"
                   className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"
                 >
                   <div className="p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
                     <Mail className="w-8 h-8" />
                   </div>
-                  <span className="text-xl font-medium">contact@jourfleuri.fr</span>
+                  <span className="text-xl font-medium">louisecarton@jourfleuri.com</span>
                 </a>
                 <a
-                  href="https://instagram.com/jourfleuri"
+                  href="tel:0628255933"
+                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"
+                >
+                  <div className="p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <span className="text-lg font-semibold">📞</span>
+                  </div>
+                  <span className="text-xl font-medium">06 28 25 59 33</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/jourfleuri_fleuriste/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"

@@ -86,7 +86,7 @@ export default function InstagramFeed({ limit = 6, showTitle = true }: Instagram
         <ScrollReveal variant="fade" delay={0.3}>
           <div className="text-center mt-8">
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/jourfleuri_fleuriste/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-4 bg-jour-fleuri-cream text-jour-fleuri-rose-poudre font-medium rounded-full border-2 border-jour-fleuri-rose-poudre hover:bg-jour-fleuri-rose-poudre hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"

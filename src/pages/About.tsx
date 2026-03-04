@@ -1,7 +1,64 @@
+import { useEffect, useState } from 'react';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxSection from '../components/ParallaxSection';
+import {
+  getPageContentForPage,
+  getPageImagesForPage,
+  type PageContent,
+  type PageImage,
+} from '../lib/supabase';
 
 export default function About() {
+  const [texts, setTexts] = useState<Record<string, PageContent>>({});
+  const [images, setImages] = useState<Record<string, PageImage>>({});
+
+  useEffect(() => {
+    async function load() {
+      const [content, pageImages] = await Promise.all([
+        getPageContentForPage('about'),
+        getPageImagesForPage('about'),
+      ]);
+
+      const textMap: Record<string, PageContent> = {};
+      content.forEach((item) => {
+        textMap[item.section_key] = item;
+      });
+      setTexts(textMap);
+
+      const imageMap: Record<string, PageImage> = {};
+      pageImages.forEach((img) => {
+        imageMap[img.section_key] = img;
+      });
+      setImages(imageMap);
+    }
+    void load();
+  }, []);
+
+  const mainImageUrl =
+    images['about_main']?.url ??
+    'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200';
+
+  const bottomLeftImageUrl =
+    images['about_bottom_left']?.url ??
+    'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=1200';
+
+  const bottomRightImageUrl =
+    images['about_bottom_right']?.url ??
+    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=1200';
+
+  const story =
+    texts['about_story']?.body ??
+    "Après une formation en enseignement, j'ai décidé de me reconvertir et de faire un CAP. Le but était d'y découvrir un métier manuel mais tout en me permettant aussi d'exploiter la branche commercial en restant au contact de l'humain. Après 3ans chez un fleuriste indépendant auprès duquel j'ai appris tout mon savoir faire mais aussi où j'ai découvert l'importance de la saisonnalité des fleurs, j'ai décidé de me lancer à mon compte en proposant d'accompagner les clients dans la décoration de leurs évènements professionnels et particuliers.";
+
+  const value1 =
+    texts['about_value_1']?.body ??
+    'Accompagner les clients dans tous leurs projets en créant une relation de confiance';
+  const value2 =
+    texts['about_value_2']?.body ?? 'Travailler avec des fleurs de saison';
+  const value3 =
+    texts['about_value_3']?.body ?? 'Proposer des créations sur mesure';
+  const value4 =
+    texts['about_value_4']?.body ?? 'Favoriser des produits locaux';
   return (
     <div className="min-h-screen bg-jour-fleuri-rose-pale relative overflow-hidden">
       <section className="py-24 px-4 relative z-10">
@@ -17,7 +74,7 @@ export default function About() {
               <ParallaxSection speed={0.3}>
                 <div className="relative">
                   <img
-                    src="https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                    src={mainImageUrl}
                     alt="Création florale"
                     loading="lazy"
                     className="relative rounded-[3rem] shadow-2xl w-full hover:shadow-3xl transition-all duration-500 hover:scale-105"
@@ -30,9 +87,7 @@ export default function About() {
               <div className="bg-jour-fleuri-cream rounded-[2rem] p-10 shadow-xl">
                 <h2 className="font-serif text-4xl text-jour-fleuri-coral mb-6">Mon <span className="font-serif text-jour-fleuri-jaune text-5xl">histoire</span></h2>
                 <p className="text-xl text-gray-800 leading-relaxed">
-                  Après une formation en enseignement, j'ai décidé de me reconvertir et de faire un CAP. Le but était d'y découvrir un métier manuel mais tout en me permettant aussi d'exploiter la branche commercial en restant au contact de l'humain. 
-                  Après 3ans chez un fleuriste indépendant auprès duquel j'ai appris tout mon savoir faire mais aussi où j'ai découvert l'importance de la saisonnalité des fleurs, j'ai décidé de me lancer à mon compte en proposant d'accompagner les clients dans la décoration de leurs évènements professionnels et particuliers. 
-
+                  {story}
                 </p>
               </div>
             </ScrollReveal>
@@ -50,7 +105,7 @@ export default function About() {
                       <div className="w-4 h-4 bg-white rounded-full"></div>
                     </div>
                     <p className="text-xl text-gray-800 pt-2">
-                      Accompagner les clients dans tous leurs projets en créant une relation de confiance
+                      {value1}
                     </p>
                   </div>
                   <div className="flex items-start group">
@@ -58,7 +113,7 @@ export default function About() {
                       <div className="w-4 h-4 bg-white rounded-full"></div>
                     </div>
                     <p className="text-xl text-gray-800 pt-2">
-                      Travailler avec des fleurs de saison
+                      {value2}
                     </p>
                   </div>
                 </div>
@@ -68,7 +123,7 @@ export default function About() {
                       <div className="w-4 h-4 bg-white rounded-full"></div>
                     </div>
                     <p className="text-xl text-gray-800 pt-2">
-                      Proposer des créations sur mesure
+                      {value3}
                     </p>
                   </div>
                   <div className="flex items-start group">
@@ -76,7 +131,7 @@ export default function About() {
                       <div className="w-4 h-4 bg-white rounded-full"></div>
                     </div>
                     <p className="text-xl text-gray-800 pt-2">
-                      Favoriser des produits locaux
+                      {value4}
                     </p>
                   </div>
                 </div>
@@ -89,7 +144,7 @@ export default function About() {
               <ParallaxSection speed={0.2}>
                 <div className="relative group">
                   <img
-                    src="https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                    src={bottomLeftImageUrl}
                     alt="Bouquet de mariée"
                     loading="lazy"
                     className="relative rounded-[3rem] shadow-xl w-full h-96 object-cover group-hover:shadow-2xl transition-all duration-500 group-hover:scale-105"
@@ -102,7 +157,7 @@ export default function About() {
               <ParallaxSection speed={0.2}>
                 <div className="relative group">
                   <img
-                    src="https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                    src={bottomRightImageUrl}
                     alt="Composition florale champêtre"
                     loading="lazy"
                     className="relative rounded-[3rem] shadow-xl w-full h-96 object-cover group-hover:shadow-2xl transition-all duration-500 group-hover:scale-105"

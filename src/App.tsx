@@ -5,10 +5,10 @@ import Footer from './components/Footer';
 import AnimatedRoute from './components/AnimatedRoute';
 import SocialCTABanner from './components/SocialCTABanner';
 import Home from './pages/Home';
+import Admin from './pages/Admin';
 import About from './pages/About';
 import Services from './pages/Services';
 import Gallery from './pages/Gallery';
-import Atelier from './pages/Atelier';
 import Testimonials from './pages/Testimonials';
 import Contact from './pages/Contact';
 
@@ -22,9 +22,9 @@ function AppRoutes() {
         <Route path="/a-propos" element={<AnimatedRoute><About /></AnimatedRoute>} />
         <Route path="/services" element={<AnimatedRoute><Services /></AnimatedRoute>} />
         <Route path="/galerie" element={<AnimatedRoute><Gallery /></AnimatedRoute>} />
-        <Route path="/atelier" element={<AnimatedRoute><Atelier /></AnimatedRoute>} />
         <Route path="/temoignages" element={<AnimatedRoute><Testimonials /></AnimatedRoute>} />
         <Route path="/contact" element={<AnimatedRoute><Contact /></AnimatedRoute>} />
+        <Route path="/admin" element={<AnimatedRoute><Admin /></AnimatedRoute>} />
       </Routes>
     </AnimatePresence>
   );
