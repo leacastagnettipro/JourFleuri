@@ -917,20 +917,6 @@ function PageImagesAdminSection() {
           'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200',
         defaultAlt: 'Création florale',
       },
-      {
-        key: 'about_bottom_left',
-        label: 'À propos – image en bas à gauche',
-        defaultUrl:
-          'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        defaultAlt: 'Bouquet de mariée',
-      },
-      {
-        key: 'about_bottom_right',
-        label: 'À propos – image en bas à droite',
-        defaultUrl:
-          'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        defaultAlt: 'Composition florale champêtre',
-      },
     ],
   };
 

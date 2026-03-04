@@ -38,14 +38,6 @@ export default function About() {
     images['about_main']?.url ??
     'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
-  const bottomLeftImageUrl =
-    images['about_bottom_left']?.url ??
-    'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=1200';
-
-  const bottomRightImageUrl =
-    images['about_bottom_right']?.url ??
-    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=1200';
-
   const story =
     texts['about_story']?.body ??
     "Après une formation en enseignement, j'ai décidé de me reconvertir et de faire un CAP. Le but était d'y découvrir un métier manuel mais tout en me permettant aussi d'exploiter la branche commercial en restant au contact de l'humain. Après 3ans chez un fleuriste indépendant auprès duquel j'ai appris tout mon savoir faire mais aussi où j'ai découvert l'importance de la saisonnalité des fleurs, j'ai décidé de me lancer à mon compte en proposant d'accompagner les clients dans la décoration de leurs évènements professionnels et particuliers.";
@@ -138,34 +130,6 @@ export default function About() {
               </div>
             </div>
           </ScrollReveal>
-
-          <div className="mt-16 grid md:grid-cols-2 gap-10">
-            <ScrollReveal variant="slide-up" delay={0.2}>
-              <ParallaxSection speed={0.2}>
-                <div className="relative group">
-                  <img
-                    src={bottomLeftImageUrl}
-                    alt="Bouquet de mariée"
-                    loading="lazy"
-                    className="relative rounded-[3rem] shadow-xl w-full h-96 object-cover group-hover:shadow-2xl transition-all duration-500 group-hover:scale-105"
-                  />
-                </div>
-              </ParallaxSection>
-            </ScrollReveal>
-
-            <ScrollReveal variant="slide-up" delay={0.3}>
-              <ParallaxSection speed={0.2}>
-                <div className="relative group">
-                  <img
-                    src={bottomRightImageUrl}
-                    alt="Composition florale champêtre"
-                    loading="lazy"
-                    className="relative rounded-[3rem] shadow-xl w-full h-96 object-cover group-hover:shadow-2xl transition-all duration-500 group-hover:scale-105"
-                  />
-                </div>
-              </ParallaxSection>
-            </ScrollReveal>
-          </div>
         </div>
       </section>
     </div>
