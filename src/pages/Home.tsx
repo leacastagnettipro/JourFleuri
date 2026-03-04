@@ -1,18 +1,21 @@
 import { Link } from 'react-router-dom';
 import { Heart, Users, Briefcase } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { getGalleryImages, getTestimonials, getPageContentForPage, type PageContent } from '../lib/supabase';
 import CarouselGallery from '../components/CarouselGallery';
 import TestimonialsCarousel from '../components/TestimonialsCarousel';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxSection from '../components/ParallaxSection';
-import InstagramFeed from '../components/InstagramFeed';
+
+const InstagramFeed = lazy(() => import('../components/InstagramFeed'));
 
 export default function Home() {
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [texts, setTexts] = useState<Record<string, PageContent>>({});
+  const [showInstagram, setShowInstagram] = useState(false);
+  const instagramRef = useRef<HTMLDivElement | null>(null);
 
   const fallbackGalleryImages = [
     { url: 'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200', alt: 'Bouquet rose et pêche' },
@@ -57,12 +60,14 @@ export default function Home() {
 
   useEffect(() => {
     async function loadData() {
-      const images = await getGalleryImages();
-      const testimonialData = await getTestimonials(true);
-      const content = await getPageContentForPage('home');
+      const [images, testimonialData, content] = await Promise.all([
+        getGalleryImages(),
+        getTestimonials(true),
+        getPageContentForPage('home'),
+      ]);
 
       if (images.length > 0) {
-        setGalleryImages(images.slice(0, 5).map(img => ({ url: img.url, alt: img.alt })));
+        setGalleryImages(images.slice(0, 5).map((img) => ({ url: img.url, alt: img.alt })));
       } else {
         setGalleryImages(fallbackGalleryImages);
       }
@@ -74,12 +79,33 @@ export default function Home() {
       }
 
       const map: Record<string, PageContent> = {};
-      content.forEach(item => {
+      content.forEach((item) => {
         map[item.section_key] = item;
       });
       setTexts(map);
     }
-    loadData();
+    void loadData();
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting) {
+          setShowInstagram(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    if (instagramRef.current) {
+      observer.observe(instagramRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   const homeIntro =
@@ -269,7 +295,19 @@ export default function Home() {
         </div>
       </section>
 
-      <InstagramFeed limit={6} showTitle={true} />
+      <div ref={instagramRef}>
+        {showInstagram && (
+          <Suspense
+            fallback={
+              <div className="py-16 bg-jour-fleuri-cream flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-jour-fleuri-coral border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
+            <InstagramFeed limit={6} showTitle={true} />
+          </Suspense>
+        )}
+      </div>
 
       <section className="py-24 px-4 bg-jour-fleuri-coral text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto relative z-10">

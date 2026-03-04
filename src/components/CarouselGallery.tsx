@@ -153,6 +153,7 @@ export default function CarouselGallery({
                 <img
                   src={image.url}
                   alt={image.alt}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
 
@@ -294,6 +295,7 @@ export default function CarouselGallery({
               <img
                 src={images[lightboxImage].url}
                 alt={images[lightboxImage].alt}
+                loading="lazy"
                 className="w-full h-full object-contain rounded-lg"
               />
               <motion.div
