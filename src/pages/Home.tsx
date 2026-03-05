@@ -179,7 +179,10 @@ export default function Home() {
             transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="text-2xl md:text-3xl text-jour-fleuri-cream mb-12 font-light drop-shadow-lg"
           >
-            Délicatesse champêtre et <span className="font-serif text-jour-fleuri-jaune text-4xl md:text-5xl">colorée</span>
+            Délicatesse champêtre et{' '}
+            <span className="font-serif text-jour-fleuri-jaune text-6xl md:text-7xl">
+              colorée
+            </span>
           </motion.p>
 
           <motion.div

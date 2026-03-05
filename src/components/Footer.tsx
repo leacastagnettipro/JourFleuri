@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Mail, Instagram, MapPin } from 'lucide-react';
+import { Mail, Instagram, MapPin, Phone } from 'lucide-react';
 import { getInstagramPosts, InstagramPost } from '../lib/supabase';
 
 export default function Footer() {
@@ -18,8 +18,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
-            <svg
+            <img
+              src="/LOGO ORANGE.svg"
+              alt="Jour Fleuri"
               className="h-16 mb-4"
+              loading="lazy"
+            />
+            <svg
+              className="h-0 hidden"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 965 580"
               aria-label="Jour Fleuri"
@@ -43,6 +49,13 @@ export default function Footer() {
           <div>
             <h4 className="font-serif text-xl text-jour-fleuri-coral mb-4">Contact</h4>
             <div className="space-y-3">
+              <a
+                href="tel:0628255933"
+                className="flex items-center gap-2 text-gray-700 hover:text-jour-fleuri-coral transition-colors"
+              >
+                <Phone size={18} />
+                <span>06 28 25 59 33</span>
+              </a>
               <a
                 href="mailto:louisecarton@jourfleuri.com"
                 className="flex items-center gap-2 text-gray-700 hover:text-jour-fleuri-coral transition-colors"
