@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxSection from '../components/ParallaxSection';
 import {
@@ -11,6 +12,7 @@ import {
 export default function About() {
   const [texts, setTexts] = useState<Record<string, PageContent>>({});
   const [images, setImages] = useState<Record<string, PageImage>>({});
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -30,13 +32,12 @@ export default function About() {
         imageMap[img.section_key] = img;
       });
       setImages(imageMap);
+      setLoaded(true);
     }
     void load();
   }, []);
 
-  const mainImageUrl =
-    images['about_main']?.url ??
-    'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200';
+  const mainImage = images['about_main'];
 
   const story =
     texts['about_story']?.body ??
@@ -51,84 +52,180 @@ export default function About() {
     texts['about_value_3']?.body ?? 'Proposer des créations sur mesure';
   const value4 =
     texts['about_value_4']?.body ?? 'Favoriser des produits locaux';
-  return (
-    <div className="min-h-screen bg-jour-fleuri-rose-pale relative overflow-hidden">
-      <section className="py-24 px-4 relative z-10">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal variant="fade">
-            <h1 className="font-serif text-6xl md:text-7xl text-jour-fleuri-coral text-center mb-8">
-              À propos de <span className="font-serif text-jour-fleuri-jaune text-7xl md:text-8xl">Jour Fleuri</span>
-            </h1>
-          </ScrollReveal>
+  const ctaText =
+    texts['about_cta_block']?.body ??
+    'Parlons de votre univers floral et imaginons ensemble une création sur mesure.';
 
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-            <ScrollReveal variant="slide-right" delay={0.2}>
-              <ParallaxSection speed={0.3}>
-                <div className="relative">
-                  <img
-                    src={mainImageUrl}
-                    alt="Création florale"
-                    loading="lazy"
-                    className="relative rounded-[3rem] shadow-2xl w-full hover:shadow-3xl transition-all duration-500 hover:scale-105"
-                  />
-                </div>
-              </ParallaxSection>
+  const topBandeau = images['about_top_bandeau'];
+  const dividerOne = images['about_divider_one'];
+  const dividerTwo = images['about_divider_two'];
+
+  if (!loaded) {
+    return (
+      <div className="min-h-screen bg-jour-fleuri-rose-pale flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-jour-fleuri-coral border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#FFD3D2] relative overflow-hidden">
+      {topBandeau && (
+        <section className="relative">
+          <div className="w-full h-44 sm:h-56 md:h-72 lg:h-[24rem] overflow-hidden">
+            <img
+              src={topBandeau.url}
+              alt={topBandeau.alt || 'Bandeau floral'}
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition: topBandeau.object_position || 'center center',
+                transform: `scale(${topBandeau.object_scale || 1})`,
+                transformOrigin: topBandeau.object_position || 'center center',
+              }}
+            />
+            <div className="absolute inset-0 bg-black/25" />
+          </div>
+          <div className="absolute inset-x-0 bottom-6 md:bottom-10 px-4 z-10">
+            <div className="max-w-6xl mx-auto">
+              <ScrollReveal variant="fade">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl text-jour-fleuri-cream text-center drop-shadow-lg">
+                  <span className="font-sans font-normal text-[0.82em]">À propos de</span>{' '}
+                  <span className="font-accent text-jour-fleuri-jaune">Jour Fleuri</span>
+                </h1>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className={`${topBandeau ? 'pt-10 md:pt-14' : 'pt-16 md:pt-24'} pb-12 md:pb-16 px-4 bg-[#FFD3D2] relative z-10`}>
+        <div className="max-w-6xl mx-auto">
+          {!topBandeau && (
+            <ScrollReveal variant="fade">
+              <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl text-jour-fleuri-coral text-center mb-10 md:mb-14">
+                <span className="font-sans font-normal text-[0.82em]">À propos de</span>{' '}
+                <span className="font-accent text-jour-fleuri-jaune">Jour Fleuri</span>
+              </h1>
             </ScrollReveal>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            {mainImage && (
+              <ScrollReveal variant="slide-right" delay={0.2}>
+                <ParallaxSection speed={0.15}>
+                  <div className="relative rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl">
+                    <img
+                      src={mainImage.url}
+                      alt={mainImage.alt || 'Portrait de la fleuriste'}
+                      loading="lazy"
+                      className="w-full h-[320px] sm:h-[420px] md:h-[520px] object-cover transition-all duration-500"
+                      style={{
+                        objectPosition: mainImage.object_position || 'center center',
+                        transform: `scale(${mainImage.object_scale || 1})`,
+                        transformOrigin: mainImage.object_position || 'center center',
+                      }}
+                    />
+                  </div>
+                </ParallaxSection>
+              </ScrollReveal>
+            )}
 
             <ScrollReveal variant="slide-left" delay={0.3}>
-              <div className="bg-jour-fleuri-cream rounded-[2rem] p-10 shadow-xl">
-                <h2 className="font-serif text-4xl text-jour-fleuri-coral mb-6">Mon <span className="font-serif text-jour-fleuri-jaune text-5xl">histoire</span></h2>
-                <p className="text-xl text-gray-800 leading-relaxed">
+              <div className="bg-[#FFE6C5] rounded-[2rem] md:rounded-[2.5rem] p-7 sm:p-9 md:p-11 shadow-xl">
+                <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-jour-fleuri-coral mb-5 md:mb-7">
+                  <span className="font-sans font-normal text-[0.82em]">Mon</span>{' '}
+                  <span className="font-accent text-jour-fleuri-jaune">histoire</span>
+                </h2>
+                <p className="text-base sm:text-lg md:text-xl text-gray-800 leading-relaxed">
                   {story}
                 </p>
               </div>
             </ScrollReveal>
           </div>
+        </div>
+      </section>
 
-          <ScrollReveal variant="slide-up" delay={0.4}>
-            <div className="bg-jour-fleuri-jaune-pale rounded-[3rem] p-10 md:p-16 shadow-2xl relative overflow-hidden">
-              <h2 className="font-serif text-4xl text-jour-fleuri-coral text-center mb-16 relative z-10">
-                Mes <span className="font-serif text-jour-fleuri-jaune text-5xl">valeurs</span>
-              </h2>
-              <div className="grid md:grid-cols-2 gap-10 relative z-10">
-                <div className="space-y-8">
-                  <div className="flex items-start group">
-                    <div className="w-12 h-12 bg-jour-fleuri-coral rounded-2xl flex items-center justify-center mr-5 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <div className="w-4 h-4 bg-white rounded-full"></div>
+      {dividerOne && (
+        <section>
+          <div className="w-full h-36 sm:h-44 md:h-52 overflow-hidden">
+            <img
+              src={dividerOne.url}
+              alt={dividerOne.alt || 'Bandeau floral intermédiaire'}
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition: dividerOne.object_position || 'center center',
+                transform: `scale(${dividerOne.object_scale || 1})`,
+                transformOrigin: dividerOne.object_position || 'center center',
+              }}
+            />
+          </div>
+        </section>
+      )}
+
+      <section className="py-14 md:py-20 px-4 bg-jour-fleuri-jaune-pale">
+        <div className="max-w-6xl mx-auto">
+          <ScrollReveal variant="slide-up" delay={0.35}>
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-jour-fleuri-coral text-center mb-10 md:mb-14">
+              <span className="font-sans font-normal text-[0.82em]">Mes</span>{' '}
+              <span className="font-accent text-jour-fleuri-jaune">valeurs</span>
+            </h2>
+
+            <div className="grid sm:grid-cols-2 gap-5 md:gap-7">
+              {[
+                { text: value1, bg: 'bg-jour-fleuri-coral' },
+                { text: value2, bg: 'bg-jour-fleuri-jaune' },
+                { text: value3, bg: 'bg-jour-fleuri-rose-poudre' },
+                { text: value4, bg: 'bg-jour-fleuri-coral-clair' },
+              ].map((value, index) => (
+                <div key={index} className="bg-jour-fleuri-cream rounded-2xl p-5 md:p-6 shadow-md">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-xl ${value.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}
+                    >
+                      <div className="w-3 h-3 bg-white rounded-full" />
                     </div>
-                    <p className="text-xl text-gray-800 pt-2">
-                      {value1}
-                    </p>
-                  </div>
-                  <div className="flex items-start group">
-                    <div className="w-12 h-12 bg-jour-fleuri-jaune rounded-2xl flex items-center justify-center mr-5 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <div className="w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                    <p className="text-xl text-gray-800 pt-2">
-                      {value2}
-                    </p>
+                    <p className="text-gray-800 text-base sm:text-lg leading-relaxed">{value.text}</p>
                   </div>
                 </div>
-                <div className="space-y-8">
-                  <div className="flex items-start group">
-                    <div className="w-12 h-12 bg-jour-fleuri-bleu rounded-2xl flex items-center justify-center mr-5 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <div className="w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                    <p className="text-xl text-gray-800 pt-2">
-                      {value3}
-                    </p>
-                  </div>
-                  <div className="flex items-start group">
-                    <div className="w-12 h-12 bg-jour-fleuri-coral-clair rounded-2xl flex items-center justify-center mr-5 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <div className="w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                    <p className="text-xl text-gray-800 pt-2">
-                      {value4}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {dividerTwo && (
+        <section>
+          <div className="w-full h-36 sm:h-44 md:h-52 overflow-hidden">
+            <img
+              src={dividerTwo.url}
+              alt={dividerTwo.alt || 'Bandeau floral intermédiaire'}
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition: dividerTwo.object_position || 'center center',
+                transform: `scale(${dividerTwo.object_scale || 1})`,
+                transformOrigin: dividerTwo.object_position || 'center center',
+              }}
+            />
+          </div>
+        </section>
+      )}
+
+      <section className="py-14 md:py-20 px-4 bg-jour-fleuri-coral text-center">
+        <div className="max-w-4xl mx-auto">
+          <ScrollReveal variant="fade" delay={0.45}>
+            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl text-jour-fleuri-cream mb-5 md:mb-6">
+              <span className="font-sans font-normal text-[0.82em]">Créons votre</span>{' '}
+              <span className="font-accent text-jour-fleuri-jaune">univers floral</span>
+            </h3>
+            <p className="text-jour-fleuri-cream text-base sm:text-lg md:text-xl mb-8 max-w-3xl mx-auto">
+              {ctaText}
+            </p>
+            <Link
+              to="/contact"
+              className="inline-block w-full sm:w-auto bg-jour-fleuri-jaune text-white hover:bg-jour-fleuri-cream hover:text-jour-fleuri-coral px-10 sm:px-12 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-bold transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105"
+            >
+              Demander un devis
+            </Link>
           </ScrollReveal>
         </div>
       </section>

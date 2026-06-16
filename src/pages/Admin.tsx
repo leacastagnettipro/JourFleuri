@@ -308,6 +308,7 @@ function ServicesAdminSection() {
   const [form, setForm] = useState({
     id: '' as string | null,
     title: '',
+    short_description: '',
     description: '',
     cta_label: 'Demander un devis',
     image_url: '',
@@ -333,6 +334,7 @@ function ServicesAdminSection() {
     setForm({
       id: null,
       title: '',
+      short_description: '',
       description: '',
       cta_label: 'Demander un devis',
       image_url: '',
@@ -349,6 +351,7 @@ function ServicesAdminSection() {
     setForm({
       id: service.id,
       title: service.title,
+      short_description: service.short_description || '',
       description: service.description,
       cta_label: service.cta_label,
       image_url: service.image_url || '',
@@ -366,8 +369,8 @@ function ServicesAdminSection() {
     setError(null);
     setSuccess(null);
 
-    if (!form.title.trim() || !form.description.trim()) {
-      setError('Merci de renseigner au minimum un titre et une description.');
+    if (!form.title.trim() || !form.short_description.trim() || !form.description.trim()) {
+      setError('Merci de renseigner un titre, une courte description et une description complète.');
       return;
     }
 
@@ -385,6 +388,7 @@ function ServicesAdminSection() {
     if (formMode === 'create') {
       const ok = await createService({
         title: form.title.trim(),
+        short_description: form.short_description.trim(),
         description: form.description.trim(),
         cta_label: form.cta_label.trim() || 'Demander un devis',
         image_url: finalImageUrl,
@@ -404,6 +408,7 @@ function ServicesAdminSection() {
     } else if (form.id) {
       const ok = await updateService(form.id, {
         title: form.title.trim(),
+        short_description: form.short_description.trim(),
         description: form.description.trim(),
         cta_label: form.cta_label.trim() || 'Demander un devis',
         image_url: finalImageUrl,
@@ -497,7 +502,7 @@ function ServicesAdminSection() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {service.description}
+                  {service.short_description || service.description}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <button
@@ -563,6 +568,21 @@ function ServicesAdminSection() {
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
               className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-jour-fleuri-coral focus:ring-2 focus:ring-jour-fleuri-coral focus:ring-opacity-20 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Courte description (utilisée sur "Nos univers floraux")
+            </label>
+            <textarea
+              rows={2}
+              value={form.short_description}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, short_description: e.target.value }))
+              }
+              className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-jour-fleuri-coral focus:ring-2 focus:ring-jour-fleuri-coral focus:ring-opacity-20 text-sm resize-none"
               required
             />
           </div>
@@ -729,6 +749,12 @@ function TextsAdminSection() {
         label: 'Valeur 4',
         defaultBody: 'Favoriser des produits locaux.',
       },
+      {
+        key: 'about_cta_block',
+        label: 'À propos – texte du bloc final',
+        defaultBody:
+          'Parlons de votre univers floral et imaginons ensemble une création sur mesure.',
+      },
     ],
     services: [
       {
@@ -889,9 +915,9 @@ function TextsAdminSection() {
 }
 
 function PageImagesAdminSection() {
-  type PageKey = 'about';
+  type PageKey = 'home' | 'about' | 'contact' | 'testimonials' | 'services';
 
-  const [page] = useState<PageKey>('about');
+  const [page, setPage] = useState<PageKey>('home');
   const [items, setItems] = useState<Record<string, EditablePageImage>>({});
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -899,23 +925,131 @@ function PageImagesAdminSection() {
   const [success, setSuccess] = useState<string | null>(null);
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [alts, setAlts] = useState<Record<string, string>>({});
+  const [positions, setPositions] = useState<Record<string, string>>({});
+  const [zooms, setZooms] = useState<Record<string, number>>({});
+  const [draggingSection, setDraggingSection] = useState<string | null>(null);
+
+  function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function parsePosition(position?: string | null) {
+    if (!position) return { x: 50, y: 50 };
+    const normalized = position.trim().toLowerCase();
+    const keywordMap: Record<string, number> = {
+      left: 0,
+      center: 50,
+      right: 100,
+      top: 0,
+      bottom: 100,
+    };
+    const [rawX = 'center', rawY = 'center'] = normalized.split(/\s+/);
+    const parsePart = (part: string, axis: 'x' | 'y') => {
+      if (part.endsWith('%')) {
+        const value = Number.parseFloat(part.replace('%', ''));
+        if (!Number.isNaN(value)) return clamp(value, 0, 100);
+      }
+      if (part in keywordMap) return keywordMap[part];
+      return axis === 'x' ? 50 : 50;
+    };
+    return { x: parsePart(rawX, 'x'), y: parsePart(rawY, 'y') };
+  }
+
+  function toPositionString(x: number, y: number) {
+    return `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+  }
+
+  function updatePositionFromPointer(
+    sectionKey: string,
+    e: React.PointerEvent<HTMLDivElement>
+  ) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = clamp(((e.clientX - rect.left) / rect.width) * 100, 0, 100);
+    const y = clamp(((e.clientY - rect.top) / rect.height) * 100, 0, 100);
+    setPositions((prev) => ({ ...prev, [sectionKey]: toPositionString(x, y) }));
+  }
 
   const config: Record<
     PageKey,
     {
       key: string;
       label: string;
-      defaultUrl: string;
       defaultAlt: string;
     }[]
   > = {
+    home: [
+      {
+        key: 'home_hero_left',
+        label: 'Accueil – photo gauche (encadre le logo)',
+        defaultAlt: 'Création florale',
+      },
+      {
+        key: 'home_hero_right',
+        label: 'Accueil – photo droite (encadre le logo)',
+        defaultAlt: 'Création florale',
+      },
+      {
+        key: 'home_univers_top_bandeau',
+        label: 'Accueil – bandeau horizontal (au-dessus de "Nos univers floraux")',
+        defaultAlt: 'Bandeau floral horizontal',
+      },
+      {
+        key: 'home_univers_bandeau',
+        label: 'Accueil – bandeau horizontal (sous "Nos univers floraux", desktop)',
+        defaultAlt: 'Bandeau floral horizontal',
+      },
+      {
+        key: 'home_cta_background',
+        label: 'Accueil – fond section "Parlons de votre projet floral"',
+        defaultAlt: 'Fond floral fumé',
+      },
+    ],
     about: [
       {
+        key: 'about_top_bandeau',
+        label: 'À propos – bandeau horizontal (haut de page)',
+        defaultAlt: 'Bandeau floral',
+      },
+      {
         key: 'about_main',
-        label: 'À propos – image principale (en haut)',
-        defaultUrl:
-          'https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        defaultAlt: 'Création florale',
+        label: 'À propos – portrait fleuriste (section Mon histoire)',
+        defaultAlt: 'Portrait de la fleuriste',
+      },
+      {
+        key: 'about_divider_one',
+        label: 'À propos – photo intermédiaire 1 (entre histoire et valeurs)',
+        defaultAlt: 'Bandeau floral intermédiaire',
+      },
+      {
+        key: 'about_divider_two',
+        label: 'À propos – photo intermédiaire 2 (entre valeurs et CTA)',
+        defaultAlt: 'Bandeau floral intermédiaire',
+      },
+    ],
+    contact: [
+      {
+        key: 'contact_top_bandeau',
+        label: 'Contact – bandeau horizontal (tout en haut)',
+        defaultAlt: 'Bandeau floral contact',
+      },
+    ],
+    testimonials: [
+      {
+        key: 'testimonials_side_left',
+        label: 'Témoignages – photo latérale gauche (verticale)',
+        defaultAlt: 'Photo florale gauche',
+      },
+      {
+        key: 'testimonials_side_right',
+        label: 'Témoignages – photo latérale droite (verticale)',
+        defaultAlt: 'Photo florale droite',
+      },
+    ],
+    services: [
+      {
+        key: 'services_top_bandeau',
+        label: 'Services – photo sous le titre (fond fumé)',
+        defaultAlt: 'Bandeau services',
       },
     ],
   };
@@ -946,6 +1080,9 @@ function PageImagesAdminSection() {
     const existing = items[sectionKey];
     const altText =
       (alts[sectionKey] || existing?.alt || sectionConfig.defaultAlt).trim();
+    const objectPosition =
+      positions[sectionKey] || existing?.object_position || 'center center';
+    const objectScale = zooms[sectionKey] ?? existing?.object_scale ?? 1;
 
     if (!file && !existing) {
       setError('Merci de choisir un fichier image avant d’enregistrer.');
@@ -959,9 +1096,20 @@ function PageImagesAdminSection() {
     let ok = true;
 
     if (file) {
-      ok = await upsertPageImageFile(file, page, sectionKey, altText);
+      ok = await upsertPageImageFile(
+        file,
+        page,
+        sectionKey,
+        altText,
+        objectPosition,
+        objectScale
+      );
     } else if (existing) {
-      ok = await updatePageImageMeta(existing.id, { alt: altText });
+      ok = await updatePageImageMeta(existing.id, {
+        alt: altText,
+        object_position: objectPosition,
+        object_scale: objectScale,
+      });
     }
 
     if (!ok) {
@@ -973,6 +1121,12 @@ function PageImagesAdminSection() {
     setSuccess('Image enregistrée avec succès.');
     setFiles((prev) => ({ ...prev, [sectionKey]: null }));
     setAlts((prev) => ({ ...prev, [sectionKey]: '' }));
+    setPositions((prev) => ({ ...prev, [sectionKey]: '' }));
+    setZooms((prev) => {
+      const next = { ...prev };
+      delete next[sectionKey];
+      return next;
+    });
     await loadPage(page);
     setSavingKey(null);
   }
@@ -983,7 +1137,7 @@ function PageImagesAdminSection() {
 
     if (
       !window.confirm(
-        'Supprimer cette image personnalisée ? La photo par défaut réapparaîtra sur le site.'
+        'Supprimer cette image ? Elle ne sera plus affichée sur le site.'
       )
     ) {
       return;
@@ -998,7 +1152,7 @@ function PageImagesAdminSection() {
       return;
     }
 
-    setSuccess('Image supprimée, la photo par défaut sera utilisée.');
+    setSuccess('Image supprimée.');
     await loadPage(page);
   }
 
@@ -1007,10 +1161,34 @@ function PageImagesAdminSection() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-700">
-        Ici, vous pouvez remplacer les photos utilisées sur les pages du site. Pour le moment, la
-        page &quot;À propos&quot; est configurable. Les images de la galerie restent gérées dans
-        l’onglet &quot;Galerie&quot;.
+        Remplacez les photos utilisées sur les pages du site. Les images de la galerie restent
+        gérées dans l’onglet &quot;Galerie&quot;.
       </p>
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { id: 'home', label: 'Accueil' },
+            { id: 'about', label: 'À propos' },
+            { id: 'contact', label: 'Contact' },
+            { id: 'testimonials', label: 'Témoignages' },
+            { id: 'services', label: 'Services' },
+          ] as { id: PageKey; label: string }[]
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setPage(tab.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              page === tab.id
+                ? 'bg-jour-fleuri-coral text-white shadow-md'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div className="py-8 flex justify-center">
@@ -1023,9 +1201,12 @@ function PageImagesAdminSection() {
 
           {sections.map((section) => {
             const current = items[section.key];
-            const previewUrl = current?.url || section.defaultUrl;
             const altValue =
               alts[section.key] || current?.alt || section.defaultAlt;
+            const objectPositionValue =
+              positions[section.key] || current?.object_position || 'center center';
+            const objectScaleValue = zooms[section.key] ?? current?.object_scale ?? 1;
+            const previewPoint = parsePosition(objectPositionValue);
 
             return (
               <div
@@ -1044,14 +1225,87 @@ function PageImagesAdminSection() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4 items-center">
-                  <div className="rounded-2xl overflow-hidden bg-gray-100 aspect-[4/3]">
-                    <img
-                      src={previewUrl}
-                      alt={altValue}
-                      className="w-full h-full object-cover"
-                    />
+                  <div
+                    className="rounded-2xl overflow-hidden bg-gray-100 aspect-[4/3] flex items-center justify-center cursor-crosshair touch-none"
+                    onPointerDown={(e) => {
+                      if (!current) return;
+                      e.preventDefault();
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      setDraggingSection(section.key);
+                      updatePositionFromPointer(section.key, e);
+                    }}
+                    onPointerMove={(e) => {
+                      if (draggingSection !== section.key) return;
+                      updatePositionFromPointer(section.key, e);
+                    }}
+                    onPointerUp={(e) => {
+                      if (draggingSection === section.key) {
+                        setDraggingSection(null);
+                      }
+                      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                        e.currentTarget.releasePointerCapture(e.pointerId);
+                      }
+                    }}
+                  >
+                    {current ? (
+                      <div className="relative w-full h-full overflow-hidden">
+                        <img
+                          src={current.url}
+                          alt={altValue}
+                          className="w-full h-full object-cover select-none pointer-events-none"
+                          style={{
+                            objectPosition: objectPositionValue,
+                            transform: `scale(${objectScaleValue})`,
+                            transformOrigin: objectPositionValue,
+                          }}
+                        />
+                        <div
+                          className="absolute w-5 h-5 border-2 border-white rounded-full bg-black/25 shadow pointer-events-none"
+                          style={{
+                            left: `calc(${previewPoint.x}% - 10px)`,
+                            top: `calc(${previewPoint.y}% - 10px)`,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 px-4 text-center">
+                        Aucune image — le site affichera un espace vide
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-3">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Cadrage (déplacez avec la souris)
+                      </label>
+                      <p className="text-[11px] text-gray-500">
+                        Cliquez-glissez directement sur l’aperçu pour déplacer la zone visible.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Zoom
+                      </label>
+                      <input
+                        type="range"
+                        min={1}
+                        max={2.5}
+                        step={0.01}
+                        value={objectScaleValue}
+                        onChange={(e) =>
+                          setZooms((prev) => ({
+                            ...prev,
+                            [section.key]: Number.parseFloat(e.target.value),
+                          }))
+                        }
+                        className="w-full"
+                      />
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        Zoom actuel : x{objectScaleValue.toFixed(2)}
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Fichier image
@@ -1104,7 +1358,7 @@ function PageImagesAdminSection() {
                           onClick={() => handleDelete(section.key)}
                           className="px-3 py-2 rounded-full border border-red-200 text-xs text-red-600 hover:bg-red-50"
                         >
-                          Supprimer l’image personnalisée
+                          Supprimer l’image
                         </button>
                       )}
                     </div>
@@ -1229,10 +1483,10 @@ function GalleryAdminSection() {
     }
   }
 
-  async function handleCategoryDelete(id: string) {
+  async function handleCategoryDelete(category: EditableGalleryCategory) {
     if (
       !window.confirm(
-        'Supprimer cette catégorie ? Les images déjà associées conserveront leur catégorie dans la base.'
+        'Supprimer cette catégorie et toutes ses images ? Cette action est irréversible.'
       )
     ) {
       return;
@@ -1241,17 +1495,17 @@ function GalleryAdminSection() {
     setError(null);
     setSuccess(null);
 
-    const ok = await deleteGalleryCategory(id);
+    const ok = await deleteGalleryCategory(category.id, category.slug);
     if (!ok) {
       setError('Erreur lors de la suppression de la catégorie.');
       return;
     }
 
-    if (selectedCategory?.id === id) {
+    if (selectedCategory?.id === category.id) {
       setSelectedCategory(null);
     }
 
-    setSuccess('Catégorie supprimée avec succès.');
+    setSuccess('Catégorie et images supprimées avec succès.');
     await loadCategories();
   }
 
@@ -1385,7 +1639,10 @@ function GalleryAdminSection() {
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  handleCategoryEdit(cat);
+                }}
                 className={`w-full flex items-center justify-between px-4 py-2 rounded-2xl text-sm border ${
                   selectedCategory?.id === cat.id
                     ? 'bg-jour-fleuri-coral text-white border-jour-fleuri-coral'
@@ -1450,7 +1707,12 @@ function GalleryAdminSection() {
               {categoryMode === 'edit' && categoryForm.id && (
                 <button
                   type="button"
-                  onClick={() => handleCategoryDelete(categoryForm.id!)}
+                  onClick={() => {
+                    const target = categories.find((cat) => cat.id === categoryForm.id);
+                    if (target) {
+                      void handleCategoryDelete(target);
+                    }
+                  }}
                   className="px-3 py-2 rounded-full border border-red-200 text-xs text-red-600 hover:bg-red-50"
                 >
                   Supprimer
@@ -1525,6 +1787,9 @@ function GalleryAdminSection() {
                 </div>
                 <div className="p-3 space-y-2 flex-1 flex flex-col">
                   <p className="text-xs text-gray-800 line-clamp-2">{image.alt}</p>
+                  <p className="text-[10px] text-gray-500">
+                    Catégorie : <span className="font-mono">{image.category}</span>
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-auto items-center">
                     {image.is_featured && (
                       <span className="px-2 py-1 rounded-full bg-jour-fleuri-jaune text-[10px] font-semibold text-white">
@@ -1654,6 +1919,12 @@ function ReviewsAdminSection() {
     setError(null);
     setSuccess(null);
 
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setError('Votre session admin a expiré. Merci de vous reconnecter avant de sauvegarder.');
+      return;
+    }
+
     if (!testimonialForm.name.trim() || !testimonialForm.text.trim()) {
       setError('Merci de renseigner au minimum le nom et le texte du témoignage.');
       return;
@@ -1664,19 +1935,18 @@ function ReviewsAdminSection() {
       text: testimonialForm.text.trim(),
       rating: testimonialForm.rating,
       event_type: testimonialForm.event_type || 'autre',
-      avatar_url: null,
       is_featured: testimonialForm.is_featured,
     };
 
-    let ok = false;
+    let errorMessage: string | null = null;
     if (modeTestimonial === 'create') {
-      ok = await createTestimonial(payload as Omit<Testimonial, 'id' | 'created_at'>);
+      errorMessage = await createTestimonial(payload as Omit<Testimonial, 'id' | 'created_at'>);
     } else if (testimonialForm.id) {
-      ok = await updateTestimonial(testimonialForm.id, payload);
+      errorMessage = await updateTestimonial(testimonialForm.id, payload);
     }
 
-    if (!ok) {
-      setError('Erreur lors de la sauvegarde du témoignage.');
+    if (errorMessage) {
+      setError(`Erreur lors de la sauvegarde du témoignage : ${errorMessage}`);
       return;
     }
 
@@ -1938,7 +2208,7 @@ function ReviewsAdminSection() {
                     htmlFor="testimonial-featured"
                     className="text-xs text-gray-700"
                   >
-                    Afficher en priorité (page d’accueil)
+                    Afficher sur la page d’accueil (témoignage vedette)
                   </label>
                 </div>
                 <div className="flex gap-2">

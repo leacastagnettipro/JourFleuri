@@ -8,17 +8,20 @@ interface TestimonialsCarouselProps {
   autoplay?: boolean;
   interval?: number;
   itemsPerView?: { mobile: number; tablet: number; desktop: number };
+  mode?: 'home' | 'page';
 }
 
 export default function TestimonialsCarousel({
   testimonials,
   autoplay = true,
   interval = 6000,
-  itemsPerView = { mobile: 1, tablet: 2, desktop: 3 }
+  itemsPerView = { mobile: 1, tablet: 2, desktop: 3 },
+  mode = 'home',
 }: TestimonialsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [itemsToShow, setItemsToShow] = useState(itemsPerView.desktop);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const handleResize = () => {
@@ -67,6 +70,7 @@ export default function TestimonialsCarousel({
   }
 
   const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + itemsToShow);
+  const isPageMode = mode === 'page';
 
   return (
     <div
@@ -90,7 +94,9 @@ export default function TestimonialsCarousel({
             {visibleTestimonials.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className="bg-white p-6 md:p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 ${
+                  isPageMode ? 'p-7 md:p-9' : 'p-6 md:p-8'
+                }`}
               >
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center overflow-hidden">
@@ -105,7 +111,13 @@ export default function TestimonialsCarousel({
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{testimonial.name}</h3>
+                    <h3
+                      className={`text-gray-900 ${
+                        isPageMode ? 'font-bold text-xl md:text-2xl' : 'font-semibold'
+                      }`}
+                    >
+                      {testimonial.name}
+                    </h3>
                     <p className="text-sm text-gray-500 capitalize">{testimonial.event_type}</p>
                   </div>
                 </div>
@@ -123,9 +135,32 @@ export default function TestimonialsCarousel({
                   ))}
                 </div>
 
-                <p className="text-gray-700 leading-relaxed line-clamp-4">
+                <p
+                  className={`text-gray-700 leading-relaxed ${
+                    isPageMode
+                      ? 'text-sm sm:text-base'
+                      : expandedIds[testimonial.id]
+                        ? 'text-base'
+                        : 'text-base line-clamp-4'
+                  }`}
+                >
                   {testimonial.text}
                 </p>
+
+                {!isPageMode && testimonial.text.length > 180 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedIds((prev) => ({
+                        ...prev,
+                        [testimonial.id]: !prev[testimonial.id],
+                      }))
+                    }
+                    className="mt-3 text-sm font-medium text-jour-fleuri-coral hover:text-jour-fleuri-coral-clair transition-colors"
+                  >
+                    {expandedIds[testimonial.id] ? 'Voir moins' : 'Voir plus'}
+                  </button>
+                )}
               </div>
             ))}
           </motion.div>

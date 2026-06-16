@@ -1,11 +1,17 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Mail, Instagram } from 'lucide-react';
+import { Mail, Instagram, Phone } from 'lucide-react';
 import { submitContactForm } from '../lib/supabase';
 import ScrollReveal from '../components/ScrollReveal';
-import { getPageContentForPage, type PageContent } from '../lib/supabase';
+import {
+  getPageContentForPage,
+  getPageImagesForPage,
+  type PageContent,
+  type PageImage,
+} from '../lib/supabase';
 
 export default function Contact() {
   const [texts, setTexts] = useState<Record<string, PageContent>>({});
+  const [pageImages, setPageImages] = useState<Record<string, PageImage>>({});
   const [formData, setFormData] = useState({
     nom: '',
     email: '',
@@ -19,12 +25,21 @@ export default function Contact() {
 
   useEffect(() => {
     async function load() {
-      const data = await getPageContentForPage('contact');
+      const [data, images] = await Promise.all([
+        getPageContentForPage('contact'),
+        getPageImagesForPage('contact'),
+      ]);
       const map: Record<string, PageContent> = {};
       data.forEach((item) => {
         map[item.section_key] = item;
       });
       setTexts(map);
+
+      const imageMap: Record<string, PageImage> = {};
+      images.forEach((item) => {
+        imageMap[item.section_key] = item;
+      });
+      setPageImages(imageMap);
     }
     void load();
   }, []);
@@ -34,6 +49,7 @@ export default function Contact() {
   const formIntro =
     texts['contact_form_intro']?.body ??
     "Vous avez un projet floral ? Racontez-moi votre univers, je serai ravie d'imaginer une création sur mesure pour votre événement.";
+  const topBandeau = pageImages['contact_top_bandeau'];
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,20 +89,54 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-jour-fleuri-rose-poudre-pale relative overflow-hidden">
-      <section className="py-24 px-4 relative z-10">
+      {topBandeau && (
+        <section className="relative">
+          <div className="w-full h-48 sm:h-64 md:h-80 lg:h-[24rem] overflow-hidden">
+            <img
+              src={topBandeau.url}
+              alt={topBandeau.alt || 'Bandeau floral contact'}
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition: topBandeau.object_position || 'center center',
+                transform: `scale(${topBandeau.object_scale || 1})`,
+                transformOrigin: topBandeau.object_position || 'center center',
+              }}
+            />
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+          <div className="absolute inset-x-0 bottom-8 sm:bottom-10 md:bottom-14 translate-y-0 px-4 z-10">
+            <div className="max-w-4xl mx-auto text-center">
+              <ScrollReveal variant="fade">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl text-[#FF6D64] mb-4 drop-shadow-lg">
+                  <span className="font-sans font-normal">Contactez</span>-
+                  <span className="font-accent text-jour-fleuri-jaune">nous</span>
+                </h1>
+                <p className="text-base sm:text-lg md:text-xl text-[#FF6D64]">
+                  {intro}
+                </p>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className={`${topBandeau ? 'pt-16 md:pt-24' : 'py-16 md:py-24'} pb-16 md:pb-24 px-4 relative z-10`}>
         <div className="max-w-4xl mx-auto">
-          <ScrollReveal variant="fade">
-            <h1 className="font-serif text-6xl md:text-7xl text-jour-fleuri-rose-poudre text-center mb-8">
-              <span className="font-serif text-jour-fleuri-coral text-7xl md:text-8xl">Contactez</span>-nous
-            </h1>
-            <p className="text-xl text-center text-gray-700 mb-16">
-              {intro}
-            </p>
-          </ScrollReveal>
+          {!topBandeau && (
+            <ScrollReveal variant="fade">
+              <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl text-jour-fleuri-rose-poudre text-center mb-6 md:mb-8">
+                <span className="font-sans font-normal text-[#FF6D64]">Contactez</span>-
+                <span className="font-accent text-jour-fleuri-jaune">nous</span>
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-center text-gray-700 mb-10 md:mb-16">
+                {intro}
+              </p>
+            </ScrollReveal>
+          )}
 
           <ScrollReveal variant="slide-up" delay={0.2}>
-            <div className="bg-jour-fleuri-cream rounded-[3rem] p-10 md:p-14 shadow-2xl mb-12 relative overflow-hidden">
-              <p className="text-2xl text-gray-800 leading-relaxed text-center mb-12 relative z-10 font-light">
+            <div className="bg-jour-fleuri-cream rounded-[2rem] md:rounded-[3rem] p-6 sm:p-8 md:p-14 shadow-2xl mb-10 md:mb-12 relative overflow-hidden">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-800 leading-relaxed text-center mb-8 md:mb-12 relative z-10 font-light">
                 {formIntro}
               </p>
 
@@ -196,7 +246,7 @@ export default function Contact() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-jour-fleuri-coral hover:bg-jour-fleuri-coral-clair text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full bg-[#FF6D64] hover:bg-[#FF857D] text-white px-8 sm:px-10 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isSubmitting ? 'Envoi en cours...' : 'Envoyer ma demande'}
                 </button>
@@ -205,39 +255,42 @@ export default function Contact() {
           </ScrollReveal>
 
           <ScrollReveal variant="slide-up" delay={0.4}>
-            <div className="bg-jour-fleuri-jaune-pale rounded-[3rem] p-10 md:p-14 shadow-2xl">
-              <h2 className="font-serif text-4xl text-jour-fleuri-coral text-center mb-10">
-                Restons en <span className="font-serif text-jour-fleuri-jaune text-5xl">contact</span>
+            <div className="bg-jour-fleuri-jaune-pale rounded-[2rem] md:rounded-[3rem] p-6 sm:p-8 md:p-14 shadow-2xl">
+              <h2 className="font-serif text-3xl sm:text-4xl text-jour-fleuri-coral text-center mb-8 md:mb-10">
+                <span className="font-sans font-normal">Restons</span> en{' '}
+                <span className="font-accent text-jour-fleuri-jaune">contact</span>
               </h2>
-              <div className="flex flex-col md:flex-row justify-center items-center gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                 <a
                   href="mailto:louisecarton@jourfleuri.com"
-                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"
+                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group bg-white/70 rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg min-h-[96px]"
                 >
-                  <div className="p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <Mail className="w-8 h-8" />
+                  <div className="p-3 sm:p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 shrink-0">
+                    <Mail className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
-                  <span className="text-xl font-medium">louisecarton@jourfleuri.com</span>
+                  <span className="text-base sm:text-lg md:text-xl font-medium break-all">
+                    louisecarton@jourfleuri.com
+                  </span>
                 </a>
                 <a
                   href="tel:0628255933"
-                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"
+                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group bg-white/70 rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg min-h-[96px]"
                 >
-                  <div className="p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <span className="text-lg font-semibold">📞</span>
+                  <div className="p-3 sm:p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 shrink-0">
+                    <Phone className="w-6 h-6 sm:w-7 sm:h-7 text-gray-900" />
                   </div>
-                  <span className="text-xl font-medium">06 28 25 59 33</span>
+                  <span className="text-base sm:text-lg md:text-xl font-medium">06 28 25 59 33</span>
                 </a>
                 <a
                   href="https://www.instagram.com/jourfleuri_fleuriste/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group"
+                  className="flex items-center gap-4 text-gray-800 hover:text-jour-fleuri-coral transition-colors group bg-white/70 rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg min-h-[96px] md:col-span-2 xl:col-span-1 md:justify-center xl:justify-start"
                 >
-                  <div className="p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <Instagram className="w-8 h-8" />
+                  <div className="p-3 sm:p-4 bg-white rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 shrink-0">
+                    <Instagram className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
-                  <span className="text-xl font-medium">@jourfleuri</span>
+                  <span className="text-base sm:text-lg md:text-xl font-medium">@jourfleuri</span>
                 </a>
               </div>
             </div>

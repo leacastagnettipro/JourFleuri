@@ -20,10 +20,10 @@ export default function Navigation() {
   return (
     <nav className="bg-jour-fleuri-cream shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-16 md:h-20">
           <Link to="/" className="flex items-center gap-2 group">
             <svg
-              className="h-12 md:h-14 transition-transform duration-300 group-hover:scale-105"
+              className="h-10 md:h-14 transition-transform duration-300 group-hover:scale-105"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 965 580"
               aria-label="Jour Fleuri"
@@ -95,20 +95,21 @@ export default function Navigation() {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-gray-700 hover:text-jour-fleuri-coral transition-colors"
+            className="md:hidden text-gray-700 hover:text-jour-fleuri-coral transition-colors p-2 -mr-2"
+            aria-label={isOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
           >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
         {isOpen && (
-          <div className="md:hidden pb-4">
+          <div className="md:hidden pb-4 border-t border-jour-fleuri-coral/15 pt-2">
             {navLinks.map(link => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`block py-3 font-sans font-medium text-base transition-colors ${
+                className={`block py-3 px-1 font-sans font-medium text-base transition-colors ${
                   isActive(link.path)
                     ? 'text-jour-fleuri-coral'
                     : 'text-gray-700 hover:text-jour-fleuri-coral'

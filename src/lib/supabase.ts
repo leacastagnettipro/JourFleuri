@@ -80,6 +80,7 @@ export interface AtelierImage {
 export interface Service {
   id: string;
   title: string;
+  short_description?: string | null;
   description: string;
   cta_label: string;
   image_url?: string | null;
@@ -115,6 +116,8 @@ export interface PageImage {
   section_key: string;
   url: string;
   alt: string | null;
+  object_position: string | null;
+  object_scale: number | null;
   order: number;
   is_visible: boolean;
   created_at: string;
@@ -315,21 +318,21 @@ export async function getAllTestimonials(): Promise<Testimonial[]> {
 
 export async function createTestimonial(
   payload: Omit<Testimonial, 'id' | 'created_at'>
-): Promise<boolean> {
+): Promise<string | null> {
   const { error } = await supabase.from('testimonials').insert([payload]);
 
   if (error) {
     console.error('Error creating testimonial:', error);
-    return false;
+    return error.message;
   }
 
-  return true;
+  return null;
 }
 
 export async function updateTestimonial(
   id: string,
   updates: Partial<Omit<Testimonial, 'id' | 'created_at'>>
-): Promise<boolean> {
+): Promise<string | null> {
   const { error } = await supabase
     .from('testimonials')
     .update(updates)
@@ -337,10 +340,10 @@ export async function updateTestimonial(
 
   if (error) {
     console.error('Error updating testimonial:', error);
-    return false;
+    return error.message;
   }
 
-  return true;
+  return null;
 }
 
 export async function deleteTestimonial(id: string): Promise<boolean> {
@@ -470,7 +473,9 @@ export async function upsertPageImageFile(
   file: File,
   page: string,
   sectionKey: string,
-  alt: string
+  alt: string,
+  objectPosition = 'center center',
+  objectScale = 1
 ): Promise<boolean> {
   try {
     const fileExt = file.name.split('.').pop();
@@ -496,6 +501,8 @@ export async function upsertPageImageFile(
           section_key: sectionKey,
           url: publicUrl,
           alt,
+          object_position: objectPosition,
+          object_scale: objectScale,
           is_visible: true,
         },
       ],
@@ -518,7 +525,9 @@ export async function upsertPageImageFile(
 
 export async function updatePageImageMeta(
   id: string,
-  updates: Partial<Pick<PageImage, 'alt' | 'is_visible' | 'order'>>
+  updates: Partial<
+    Pick<PageImage, 'alt' | 'object_position' | 'object_scale' | 'is_visible' | 'order'>
+  >
 ): Promise<boolean> {
   const { error } = await supabase
     .from('page_images')
@@ -682,18 +691,68 @@ export async function updateGalleryCategory(
   return true;
 }
 
-export async function deleteGalleryCategory(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('gallery_categories')
-    .delete()
-    .eq('id', id);
+export async function deleteGalleryCategory(id: string, slug: string): Promise<boolean> {
+  try {
+    const { data: images, error: imagesError } = await supabase
+      .from('gallery_images')
+      .select('url')
+      .eq('category', slug);
 
-  if (error) {
-    console.error('Error deleting gallery category:', error);
+    if (imagesError) {
+      console.error('Error fetching gallery images before category delete:', imagesError);
+      return false;
+    }
+
+    const storagePaths = (images || [])
+      .map((img) => {
+        try {
+          const url = new URL(img.url);
+          const marker = '/storage/v1/object/public/gallery/';
+          const markerIndex = url.pathname.indexOf(marker);
+          if (markerIndex === -1) return null;
+          return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+        } catch {
+          return null;
+        }
+      })
+      .filter((path): path is string => Boolean(path));
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('gallery')
+        .remove(storagePaths);
+
+      if (storageError) {
+        // Do not block category cleanup if storage file(s) are already missing.
+        console.error('Error deleting gallery storage files:', storageError);
+      }
+    }
+
+    const { error: imagesDeleteError } = await supabase
+      .from('gallery_images')
+      .delete()
+      .eq('category', slug);
+
+    if (imagesDeleteError) {
+      console.error('Error deleting gallery images for category:', imagesDeleteError);
+      return false;
+    }
+
+    const { error: categoryDeleteError } = await supabase
+      .from('gallery_categories')
+      .delete()
+      .eq('id', id);
+
+    if (categoryDeleteError) {
+      console.error('Error deleting gallery category:', categoryDeleteError);
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Unexpected error deleting gallery category:', e);
     return false;
   }
-
-  return true;
 }
 
 export async function createGalleryImage(
@@ -724,6 +783,10 @@ export async function createGalleryImage(
         url: publicUrl,
         alt,
         category: categorySlug,
+        is_visible: true,
+        is_featured: false,
+        aspect_ratio: 1.0,
+        order: 0,
       },
     ]);
 
